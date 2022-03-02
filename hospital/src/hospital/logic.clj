@@ -98,9 +98,27 @@
       departamento
       peek))
 
+; pode refatorar, claro
+; mas também pode testar :) extraimos portanto podemos testar
+
+(defn mesmo-tamanho? [hospital, outro-hospital, de para]
+  (= (+ (count (get outro-hospital de)) (count (get outro-hospital para)))
+     (+ (count (get hospital de)) (count (get hospital para))))
+  )
+
 (s/defn transfere :- h.model/Hospital
   "Transfere o proximo paciente da fila de para a fila para"
   [hospital :- h.model/Hospital, de :- s/Keyword, para :- s/Keyword]
+  {
+   ; em clojure muitas vezes essa parte voltada a contratos não é
+   ;; é favorecido ifs, schemas, testes etc
+   :pre [(contains? hospital de), (contains? hospital para)]
+   :post [(mesmo-tamanho? hospital % de para)]
+   ;:post [(= (+ (count (get % de)) (count (get % para)))
+   ;         (+ (count (get hospital de)) (count (get hospital para))))
+   ;      ]
+   }
+
   (let [pessoa (proxima hospital de)]
     (-> hospital
         (atende de)

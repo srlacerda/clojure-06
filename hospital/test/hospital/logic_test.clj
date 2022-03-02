@@ -3,7 +3,7 @@
   (:require [clojure.test :refer :all]
             [hospital.logic :refer :all]
             [hospital.model :as h.model]
-            [schema.core  :as s]))
+            [schema.core :as s]))
 
 (s/set-fn-validation! true)
 
@@ -106,23 +106,40 @@
     (let [hospital-original {:espera (conj h.model/fila-vazia "5") :raio-x h.model/fila-vazia}]
       (is (= {:espera []
               :raio-x ["5"]}
-             (transfere hospital-original :espera :raio-x)))
-      )
+             (transfere hospital-original :espera :raio-x))))
 
     (let [hospital-original {:espera (conj h.model/fila-vazia "51" "5") :raio-x (conj h.model/fila-vazia "13")}]
       (is (= {:espera ["5"]
               :raio-x ["13" "51"]}
-             (transfere hospital-original :espera :raio-x)))
+             (transfere hospital-original :espera :raio-x)))))
+
+  (testing "recusa pessoas se não cabe"
+    (let [hospital-cheio {:espera (conj h.model/fila-vazia "5") :raio-x (conj h.model/fila-vazia "1" "54" "43" "12" "51")}]
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (transfere hospital-cheio :espera :raio-x)))))
+
+  ; será que faz sentido deu garantir que o schema esta do outro lado?
+  ; lembrando que este teste nao garante extamente isso, garante só o erro do nil
+  ; ... é obvio que inguem vai apagar um teste automatizado do nada, vai sentir o peso de apagar
+  ; mas não é óbvio que ninguém vai apagar uma restrição de um schema, pq naquele instante pode fazer sentido
+  ; na cabeça da pessoa que não entende ainda o dominio e as restrições do schema
+  ; por isso eu, diego, tenhoa uma tendencia de criar testes do genero (validar que algo nao foi removido)
+  ; em situações CRITICAS
+  (testing "Não pode invocar transferencia sem hospital"
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (transfere nil :espera :raio-x))))
+
+  (testing "condições obrigatórias"
+    (let [hospital {:espera (conj h.model/fila-vazia "5") :raio-x (conj h.model/fila-vazia "1" "54" "43" "12")}]
+      (is (thrown? AssertionError
+                   (transfere hospital :nao-existe :raio-x)))
+      (is (thrown? AssertionError
+                   (transfere hospital :raio-x :nao-existe)))
       )
 
     )
 
-  (testing "recusa pessoas se não cabe"
-    (let [hospital-cheio {:espera (conj h.model/fila-vazia "5") :raio-x  (conj h.model/fila-vazia "1" "54" "43" "12" "54")}]
-      (is (thrown? clojure.lang.ExceptionInfo
-             (transfere hospital-cheio :espera :raio-x)))
-      )
-    ))
+  )
 
 
 
