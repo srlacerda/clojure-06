@@ -2,7 +2,10 @@
   (:use clojure.pprint)
   (:require [clojure.test :refer :all]
             [hospital.logic :refer :all]
-            [hospital.model :as h.model]))
+            [hospital.model :as h.model]
+            [schema.core  :as s]))
+
+(s/set-fn-validation! true)
 
 (deftest cabe-na-fila?-test
 
@@ -52,7 +55,7 @@
       (is (= {:espera [1, 2, 3, 4, 5]}
              (chega-em {:espera [1, 2, 3, 4]}, :espera, 5)))
 
-      ; teste não sequencial
+      ; teste não  sequencial
       (is (= {:espera [1, 2, 5]}
              (chega-em {:espera [1, 2]}, :espera, 5))))
 
@@ -100,23 +103,22 @@
 
 (deftest transfere-test
   (testing "aceita pessoas se cabe"
-    (let [hospital-original {:espera [5] :raio-x []}]
+    (let [hospital-original {:espera (conj h.model/fila-vazia "5") :raio-x h.model/fila-vazia}]
       (is (= {:espera []
-              :raio-x [5]}
+              :raio-x ["5"]}
              (transfere hospital-original :espera :raio-x)))
       )
 
-    (let [hospital-original {:espera (conj h.model/fila-vazia 51 5) :raio-x (conj h.model/fila-vazia 13)}]
-      (pprint (transfere hospital-original :espera :raio-x))
-      (is (= {:espera [5]
-              :raio-x [13 51]}
+    (let [hospital-original {:espera (conj h.model/fila-vazia "51" "5") :raio-x (conj h.model/fila-vazia "13")}]
+      (is (= {:espera ["5"]
+              :raio-x ["13" "51"]}
              (transfere hospital-original :espera :raio-x)))
       )
 
     )
 
   (testing "recusa pessoas se não cabe"
-    (let [hospital-cheio {:espera [5] :raio-x [1 2 53 42 13]}]
+    (let [hospital-cheio {:espera (conj h.model/fila-vazia "5") :raio-x  (conj h.model/fila-vazia "1" "54" "43" "12" "54")}]
       (is (thrown? clojure.lang.ExceptionInfo
              (transfere hospital-cheio :espera :raio-x)))
       )
